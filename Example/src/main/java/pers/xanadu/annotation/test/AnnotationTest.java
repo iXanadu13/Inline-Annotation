@@ -2,6 +2,7 @@ package pers.xanadu.annotation.test;
 
 import pers.xanadu.annotation.Inline;
 import pers.xanadu.annotation.InlineAt;
+//import pers.xanadu.annotation.test.Lang;//is required
 
 import java.util.*;
 
@@ -121,9 +122,12 @@ public class AnnotationTest {
         test(res);
         return -1;
     }
-    @Inline
+    //@Inline
     private String synchronized_test(){
-        String test;
+        @InlineAt("pers.xanadu.annotation.test.Lang")
+        Object test = Lang.info("123");
+        @InlineAt("pers.xanadu.annotation.test.Lang")
+        Object obj = Lang.newInstance();
         synchronized (AnnotationTest.class){
             obj = new ArrayList<>();
             if(new Random().nextBoolean()) return "123";
@@ -148,9 +152,10 @@ public class AnnotationTest {
         }
         return res;
     }
-    @Inline
+    //@Inline
     public void test_multi_param(int i0,int i1,int i2){
-        static_test();
+        @InlineAt("pers.xanadu.annotation.test.AnnotationTest.InnerClass")
+        Object inline = InnerClass.static_test();
     }
     @Inline
     public int recursive(int i0){
@@ -160,7 +165,8 @@ public class AnnotationTest {
     }
     @Inline
     public TestRet testRet(){
-        test_multi_param(recursive(1),3,6);
+        @InlineAt int res = recursive(1);
+        test_multi_param(res,3,6);
         return null;
     }
     public static class InnerClass{

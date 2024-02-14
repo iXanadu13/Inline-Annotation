@@ -41,7 +41,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 @SupportedAnnotationTypes({"*"})
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class InlineProcessor extends BaseProcessor {
-    private static final AtomicInteger ID = new AtomicInteger(0);
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         if(roundEnv.processingOver()) return false;
@@ -52,8 +51,11 @@ public class InlineProcessor extends BaseProcessor {
         for(Element element : set){
             if(element instanceof Symbol.MethodSymbol){
                 //方法所在类中的所有import
-                //JCTree.JCCompilationUnit compilationUnit = (JCTree.JCCompilationUnit) trees.getPath(element).getCompilationUnit();
-                //compilationUnit.getImports().forEach(jcImport -> System.out.println("发现import："+jcImport));
+//                JCTree.JCCompilationUnit compilationUnit = (JCTree.JCCompilationUnit) trees.getPath(element).getCompilationUnit();
+//                compilationUnit.getImports().forEach(jcImport -> {
+//                    System.out.println("发现import："+jcImport);
+//                    treeMaker.I
+//                });
                 TypeElement class_element = (TypeElement) element.getEnclosingElement();
                 String class_name = class_element.getQualifiedName().toString();
                 //TreePath path = trees.getPath(element);
@@ -71,7 +73,7 @@ public class InlineProcessor extends BaseProcessor {
                         //System.out.println("XMethod测试: "+symbol);
                         mp.put(symbol,jcMethod);
                         methodDecls.add(jcMethod);
-                        System.out.println("获取到方法："+jcMethod.name);
+                        System.out.println("获取到方法："+jcMethod.name+", class: "+class_name);
                     }
 //                    @Override
 //                    public void visitVarDef(JCTree.JCVariableDecl jcVariableDecl){
@@ -81,7 +83,7 @@ public class InlineProcessor extends BaseProcessor {
                 });
             }
         }
-        //对所有注解为@inline的jcMethod进行处理
+        //对所有注解为@Inline的jcMethod进行处理
         // TODO: 如果发现递归取消inline
         for(JCTree.JCMethodDecl jcMethod : methodDecls){
 
@@ -104,15 +106,8 @@ public class InlineProcessor extends BaseProcessor {
             // JCTree.JCDoWhileLoop, JCTree.JCEnhancedForLoop,
             // JCTree.JCForLoop, JCTree.JCLabeledStatement,
             // JCTree.JCSynchronized, JCTree.JCTry, JCTree.JCWhileLoop
-            jcMethod.getBody().accept(new TreeScanner(){
-                @Override
-                public void scan(JCTree jcTree){
-                    super.scan(jcTree);
-                    if(jcTree instanceof JCTree.JCStatement){
 
-                    }
-                }
-            });
+
             //TreeCopier<Void> copier = new TreeCopier<>(treeMaker);
             //JCTree.JCBlock copy = copier.copy(code_block);
             //List<JCTree.JCStatement> statements = copy.getStatements();
@@ -146,7 +141,8 @@ public class InlineProcessor extends BaseProcessor {
                 java.util.List<String> prefix = new ArrayList<>();
                 prefix.add(enclosing_class_name);
                 //方法所在类中的所有import
-                JCTree.JCCompilationUnit compilationUnit = (JCTree.JCCompilationUnit) trees.getPath(element).getCompilationUnit();
+                JCTree.JCCompilationUnit compilationUnit = toUnit(element);
+                if (compilationUnit==null) continue;
                 List<JCTree.JCImport> imports = compilationUnit.getImports();
                 imports.forEach(jcImport -> {
                     //java.util.*
@@ -163,49 +159,7 @@ public class InlineProcessor extends BaseProcessor {
                         transJCMethodInvocationBlock(jcBlock,context);
                         System.out.println("转换后的代码块："+jcBlock);
                     }
-//                    @Override
-//                    public void visitExec(JCTree.JCExpressionStatement statement){
-//                        super.visitExec(statement);
-//                        JCTree.JCExpression expression = statement.getExpression();
-//                        System.out.println("Statement类型："+expression.getClass());
-//                        System.out.println("Statement："+expression);
-//                        if(expression instanceof JCTree.JCMethodInvocation){
-//                            System.out.println("方法调用："+expression);
-//                            JCTree.JCMethodInvocation methodInvocation = (JCTree.JCMethodInvocation) expression;
-//                            //解析后的方法调用
-//                            JCTree.JCMethodInvocation resolvedMethodCall;
-//                            Type type;
-//                            {
-//                                //解析一下，拿到methodInvocation调用的方法返回类型
-//                                JavacAST ast = JavacAST.instance((JavacProcessingEnvironment) processingEnv,toUnit(element));
-//                                JavacNode methodCallNode = ast.get(methodInvocation);
-//                                Map<JCTree, JCTree> resolution = new JavacResolution(methodCallNode.getContext()).resolveMethodMember(methodCallNode);
-//                                resolvedMethodCall = (JCTree.JCMethodInvocation) resolution.get(methodInvocation);
-//                                type = resolvedMethodCall.type;
-//                            }
-//                            JCTree parent = getParent(compilationUnit,methodInvocation);
-//                            //这里一定是JCBlock
-//                            if (parent instanceof JCTree.JCBlock){
-//                                JCTree.JCBlock jcBlock = (JCTree.JCBlock) parent;
-//                                {
-//                                    boolean isVoid = type.getTag() == TypeTag.VOID;
-//                                    ListBuffer<JCTree.JCStatement> listBuffer = new ListBuffer<>();
-//                                    //JCBlock内第一句为<Type> $$$temp$$$<ID> = null;
-//                                    if (!isVoid) {
-//                                        listBuffer.append(treeMaker.VarDef(
-//                                                treeMaker.Modifiers(0),names.fromString("$$$temp$$$"+ID.incrementAndGet()),treeMaker.Type(type),null));
-//                                        for (JCTree.JCStatement statement1 : jcBlock.stats){
-//                                            listBuffer.append(statement1);
-//                                        }
-//                                        jcBlock.stats = listBuffer.toList();
-//                                    }
-//                                }
-//
-//                            }
-//                            //processMethodInvocation((JCTree.JCMethodInvocation) expression);
-//                        }
-//
-//                    }
+
 //                    @Override
 //                    public void visitApply(JCTree.JCMethodInvocation methodInvocation){
 //                        super.visitApply(methodInvocation);
@@ -304,7 +258,7 @@ public class InlineProcessor extends BaseProcessor {
         return false;
 
     }
-    private JCTree.JCMethodDecl trackMethodDecl(JCTree.JCMethodInvocation jcMethodInvocation, Context context){
+    private JCTree.JCMethodDecl trackMethodDecl(JCTree.JCMethodInvocation jcMethodInvocation, Context context,String owner){
         //解析后的方法调用
         JCTree.JCMethodInvocation resolvedMethodCall;
         Type type;
@@ -316,7 +270,6 @@ public class InlineProcessor extends BaseProcessor {
             resolvedMethodCall = (JCTree.JCMethodInvocation) resolution.get(jcMethodInvocation);
             type = resolvedMethodCall.type;
         }
-
         String meth = resolvedMethodCall.meth.toString();
         String[] splits = meth.split("\\.");
         //目前只解析指定类名的调用，即CLASS_NAME.method(...)或pkg.CLASS_NAME.method(...)
@@ -326,16 +279,22 @@ public class InlineProcessor extends BaseProcessor {
         final String simple_name = meth.substring(0,meth.length()-method_name.length()-1);
         //用于兜底的情形，即这里的simple_name实际上已经是全限定名
         String res = simple_name;
-        //尝试分析是SimpleName的情形
         boolean found = false;
+        if (owner!=null && !"".equals(owner)){
+            res = owner;
+            found = true;
+        }
+        //尝试分析是SimpleName的情形
         //导入了类
-        for (String maybe : context.prefix) {
-            String[] names = maybe.split("\\.");
-            if (!Objects.equals(names[names.length - 1], "*")){
-                if (Objects.equals(names[names.length - 1], simple_name)){
-                    res = maybe;
-                    found = true;
-                    break;
+        if (!found){
+            for (String maybe : context.prefix) {
+                String[] names = maybe.split("\\.");
+                if (!Objects.equals(names[names.length - 1], "*")){
+                    if (Objects.equals(names[names.length - 1], simple_name)){
+                        res = maybe;
+                        found = true;
+                        break;
+                    }
                 }
             }
         }
@@ -348,6 +307,7 @@ public class InlineProcessor extends BaseProcessor {
                     try{
                         Class<?> clazz = Class.forName(maybe.replace("*",simple_name));
                         for (Method method : clazz.getMethods()){
+                            //目前只处理static方法
                             if (Modifier.isStatic(method.getModifiers())){
                                 if (method.getName().equals(method_name)){
                                     res = maybe.replace("*",simple_name);
@@ -442,26 +402,6 @@ public class InlineProcessor extends BaseProcessor {
         return (JCTree.JCCompilationUnit) path.getCompilationUnit();
     }
 
-    private void processMethodInvocation(JCTree.JCMethodInvocation methodInvocation){
-        //methodInvocation.meth 调用方法为static时为JCIdent，调用成员方法时为JCFieldAccess
-        if(methodInvocation.meth instanceof JCTree.JCIdent){
-            JCTree.JCIdent jcIdent = (JCTree.JCIdent)methodInvocation.meth;
-            System.out.println("调用的方法为："+(jcIdent.name));
-            //jcIdent.sym为null，因为只有代表类时才有效
-        }
-        else if(methodInvocation.meth instanceof JCTree.JCFieldAccess){
-            JCTree.JCFieldAccess fieldAccess = (JCTree.JCFieldAccess)methodInvocation.meth;
-            System.out.println("方法执行对象: "+fieldAccess.selected);
-            System.out.println("调用的方法为："+fieldAccess.name);
-            //jcIdent.sym为null，因为只有代表类时才有效
-        }
-        System.out.println("调用语句："+methodInvocation);
-        System.out.println("expression: "+methodInvocation.getMethodSelect());
-        System.out.println("Type："+methodInvocation.varargsElement);
-        JCTree.JCExpression expression = methodInvocation.getMethodSelect();
-        System.out.println("isPoly?"+expression.isPoly()+" isStandalone?"+expression.isStandalone());
-        //if(expression.isPoly())
-    }
     private void transJCMethodInvocationBlock(JCTree.JCBlock jcBlock,Context context){
         ListBuffer<JCTree.JCStatement> listBuffer = new ListBuffer<>();
         for (JCTree.JCStatement jcStatement : jcBlock.stats){
@@ -491,9 +431,23 @@ public class InlineProcessor extends BaseProcessor {
             if (init instanceof JCTree.JCMethodInvocation){
                 JCTree.JCMethodInvocation jcMethodInvocation = (JCTree.JCMethodInvocation) init;
                 //init不需要在这里解析，因为trackMethodDecl方法内部已经解析了
-                JCTree.JCMethodDecl decl = trackMethodDecl(jcMethodInvocation,context);
+                JCTree.JCMethodDecl decl = trackMethodDecl(jcMethodInvocation,context,at.value());
                 System.out.println("decl is null? "+decl);
                 if (decl!=null){
+                    JCTree.JCCompilationUnit compilationUnit_invocation = toUnit(context.ancestor);
+                    JCTree.JCCompilationUnit compilationUnit_decl = toUnit(decl.sym);
+                    //将方法申明所在类的import都加进来
+                    if(compilationUnit_decl!=null){
+                        TreeCopier<Void> copier = new TreeCopier<>(treeMaker);
+                        ListBuffer<JCTree> imports = new ListBuffer<>();
+                        compilationUnit_decl.getImports().forEach(jcImport -> {
+                            imports.append(copier.copy(jcImport));
+                        });
+                        if (compilationUnit_invocation != null) {
+                            compilationUnit_invocation.defs.forEach(imports::append);
+                            compilationUnit_invocation.defs = imports.toList();
+                        }
+                    }
                     if (decl.restype.type.getTag()==TypeTag.VOID){
                         TreeCopier<Void> copier = new TreeCopier<>(treeMaker);
                         ListBuffer<JCTree.JCStatement> code = parseArguments(jcMethodInvocation,decl);
@@ -506,7 +460,6 @@ public class InlineProcessor extends BaseProcessor {
                         return Collections.singletonList(block);
                     }
                     else{
-                        System.out.println("辅助变量名字："+variableDecl.name);
                         TreeCopier<Void> copier = new TreeCopier<>(treeMaker);
                         ListBuffer<JCTree.JCStatement> code = parseArguments(jcMethodInvocation,decl);
                         for (JCTree.JCStatement stat : decl.body.stats) {
@@ -532,6 +485,20 @@ public class InlineProcessor extends BaseProcessor {
             }
         }
         return null;
+    }
+    private void importClass(Element element,String fullName){
+        JCTree.JCCompilationUnit compilationUnit = (JCTree.JCCompilationUnit) trees.getPath(element).getCompilationUnit();
+        String className = fullName.substring(fullName.lastIndexOf(".") + 1);
+        String packageName = fullName.substring(0, fullName.lastIndexOf("."));
+        JCTree.JCFieldAccess fieldAccess = treeMaker.Select(treeMaker.Ident(names.fromString(packageName)),
+                names.fromString(className));
+        JCTree.JCImport jcImport = treeMaker.Import(fieldAccess, false);
+        ListBuffer<JCTree> imports = new ListBuffer<>();
+        imports.append(jcImport);
+        for (int i = 0; i < compilationUnit.defs.size(); i++) {
+            imports.append(compilationUnit.defs.get(i));
+        }
+        compilationUnit.defs = imports.toList();
     }
     private ListBuffer<JCTree.JCStatement> parseArguments(JCTree.JCMethodInvocation jcMethodInvocation, JCTree.JCMethodDecl jcMethodDecl){
         ListBuffer<JCTree.JCStatement> res = new ListBuffer<>();
