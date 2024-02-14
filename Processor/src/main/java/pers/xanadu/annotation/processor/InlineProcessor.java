@@ -438,6 +438,20 @@ public class InlineProcessor extends BaseProcessor {
                     JCTree.JCCompilationUnit compilationUnit_decl = toUnit(decl.sym);
                     //将方法申明所在类的import都加进来
                     if(compilationUnit_decl!=null){
+                        JCTree.JCClassDecl decl_class = null;
+                        for (JCTree jcTree : compilationUnit_decl.defs){
+                            if (jcTree instanceof JCTree.JCClassDecl) {
+                                //找到方法申明所在的外部类
+                                decl_class = (JCTree.JCClassDecl) jcTree;
+                                break;
+                            }
+                        }
+                        //总是成立
+                        if (decl_class != null) {
+                            //import p.k.g.MethodDeclClassName;
+                            importClass(context.ancestor,decl_class.sym.fullname.toString());
+                            // TODO: add import static p.k.g.MethodDeclClassName.*; ?
+                        }
                         TreeCopier<Void> copier = new TreeCopier<>(treeMaker);
                         ListBuffer<JCTree> imports = new ListBuffer<>();
                         compilationUnit_decl.getImports().forEach(jcImport -> {

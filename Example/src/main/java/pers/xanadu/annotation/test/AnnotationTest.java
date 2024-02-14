@@ -2,13 +2,16 @@ package pers.xanadu.annotation.test;
 
 import pers.xanadu.annotation.Inline;
 import pers.xanadu.annotation.InlineAt;
-//import pers.xanadu.annotation.test.Lang;//is required
+import pers.xanadu.annotation.test.subpkg.OtherClass;
 
 import java.util.*;
 
 //import static pers.xanadu.annotation.test.Lang.*;
 import static pers.xanadu.annotation.test.AnnotationTest.InnerClass.static_test;
+import static pers.xanadu.annotation.test.Lang.list;
+import static pers.xanadu.annotation.test.Lang.newInstance;
 import static pers.xanadu.annotation.test.conflict.Lang.*;
+import static pers.xanadu.annotation.test.subpkg.OtherClass.*;
 
 public class AnnotationTest {
     private Object obj;
@@ -36,6 +39,14 @@ public class AnnotationTest {
     //@Inline
     public static int gen(){
         @InlineAt String string = AnnotationTest.test("123");
+        //require: import static pers.xanadu.annotation.test.Lang.list;
+        //because Lang.list is not specified in function staticImportTest()
+        @InlineAt("pers.xanadu.annotation.test.Lang")
+        Object test = Lang.staticImportTest();
+        //require: import static pers.xanadu.annotation.test.subpkg.OtherClass.*;
+        //because OtherClass.mp is not specified in function method_other_okg_test()
+        @InlineAt
+        Object test2 = OtherClass.method_other_okg_test();
         test(string);
         //test(test("嵌套"));
         Thread thread = new Thread(){
@@ -61,51 +72,15 @@ public class AnnotationTest {
         test2 = "3";
         int x=666;
         switch_test(++x);
-        type_cast_test((double)x);
-        type_cast_test(x+0.1);
-        type_cast_test(0.1+x);
         Void void_test = null;
-        test_void(void_test);
         String[][] str = null;
-        array_test(str);
         TestRet.InnerType innerType = new TestRet.InnerType();
-        wrapped_type_test(innerType);
         Class clazz = null;
-        class_arg_test(clazz);
-        class_arg_test(TestRet.class);
         String test = "123";
-        annotated_arg_test(test);
         Map<String,UUID> mp = new HashMap<>();
-        map_test(mp);
     }
-    @Inline
-    private void map_test(Map<String, UUID> mp){
 
-    }
-    @Inline
-    private void type_cast_test(double d){
 
-    }
-    @Inline
-    private void annotated_arg_test(@TestAnnotation String str){
-
-    }
-    @Inline
-    private void class_arg_test(Class<?> clazz){//with typearg
-
-    }
-    @Inline
-    private void wrapped_type_test(TestRet.InnerType innerType){
-
-    }
-    @Inline
-    private void test_void(Void p){
-
-    }
-    @Inline
-    public void array_test(String[][] str){
-
-    }
     @Inline
     public static int switch_test(int x){
         String res = "123";
@@ -124,10 +99,13 @@ public class AnnotationTest {
     }
     //@Inline
     private String synchronized_test(){
+        // specified className in @InlineAt
+        // or add import pers.xanadu.annotation.test.Lang;
         @InlineAt("pers.xanadu.annotation.test.Lang")
         Object test = Lang.info("123");
+        //"Lang" can be omitted because it has been specified in @InlineAt
         @InlineAt("pers.xanadu.annotation.test.Lang")
-        Object obj = Lang.newInstance();
+        Object obj = newInstance();
         synchronized (AnnotationTest.class){
             obj = new ArrayList<>();
             if(new Random().nextBoolean()) return "123";
