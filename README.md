@@ -22,7 +22,7 @@ Once import it as maven project, the dependency below is missing in pom.xml.
     <scope>provided</scope>
 </dependency>
 ```
-This file can be found at %JAVA_HOME%\lib\tools.jar. 
+This file can be found at `%JAVA_HOME%\lib\tools.jar`. 
 
 You can use the command below to install it to your local maven repository:
 
@@ -42,7 +42,7 @@ You can use the command below to install it to your local maven repository:
 
 ### step 3
 
-Run `mvn clean compile package` and see the output file at Inline-Annotation\Example\target.
+Run `mvn clean compile package` and see the output file at `Inline-Annotation\Example\target`.
 
 ## Some Example
 
