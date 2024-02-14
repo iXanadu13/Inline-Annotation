@@ -36,7 +36,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @AutoService(Processor.class)
-//@SupportedAnnotationTypes("pers.xanadu.annotation.inline")
 @SupportedAnnotationTypes({"*"})
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class InlineProcessor extends BaseProcessor {
@@ -49,12 +48,6 @@ public class InlineProcessor extends BaseProcessor {
         java.util.List<JCTree.JCMethodDecl> methodDecls = new ArrayList<>();
         for(Element element : set){
             if(element instanceof Symbol.MethodSymbol){
-                //方法所在类中的所有import
-//                JCTree.JCCompilationUnit compilationUnit = (JCTree.JCCompilationUnit) trees.getPath(element).getCompilationUnit();
-//                compilationUnit.getImports().forEach(jcImport -> {
-//                    System.out.println("发现import："+jcImport);
-//                    treeMaker.I
-//                });
                 TypeElement class_element = (TypeElement) element.getEnclosingElement();
                 String class_name = class_element.getQualifiedName().toString();
                 //TreePath path = trees.getPath(element);
@@ -83,45 +76,13 @@ public class InlineProcessor extends BaseProcessor {
             }
         }
         //对所有注解为@Inline的jcMethod进行处理
-        // TODO: 如果发现递归取消inline
+        // TODO - 如果发现递归取消inline
+        // TODO - 目前遇到递归会因为标签冲突而直接编译失败
         for(JCTree.JCMethodDecl jcMethod : methodDecls){
-
-//            if(jcMethod.name.toString().equals("gen")){
-//                //messager.printMessage(Diagnostic.Kind.WARNING,"警告");
-//                System.out.println("发现测试方法");
-//                if(jcMethod.body.stats!=null)
-//                    jcMethod.body.stats.forEach(System.out::println);
-//                jcMethod.accept(new TreeTranslator(){
-//                    @Override
-//                    public void visitClassDef(JCTree.JCClassDecl classDecl){
-//                        super.visitClassDef(classDecl);
-//                        System.out.println("发现方法内的类定义");
-//                        System.out.println(classDecl.name);
-//                    }
-//                });
-//                continue;
-//            }
-            
-            // JCTree.JCDoWhileLoop, JCTree.JCEnhancedForLoop,
-            // JCTree.JCForLoop, JCTree.JCLabeledStatement,
-            // JCTree.JCSynchronized, JCTree.JCTry, JCTree.JCWhileLoop
-
-
             //TreeCopier<Void> copier = new TreeCopier<>(treeMaker);
             //JCTree.JCBlock copy = copier.copy(code_block);
             //List<JCTree.JCStatement> statements = copy.getStatements();
             transJCMethodBlock(jcMethod);
-
-//            for(JCTree.JCStatement statement : statements){
-//                System.out.println("方法体中的句子："+statement);
-//                System.out.println(statement.getClass());
-//                if(statement instanceof JCTree.JCForLoop || statement instanceof JCTree.JCWhileLoop || statement instanceof JCTree.JCDoWhileLoop) continue;
-//                if(statement instanceof JCTree.JCLabeledStatement) continue;
-//                if(statement instanceof JCTree.JCEnhancedForLoop) continue;
-//
-//                //JCTree.JCExpressionStatement
-//            }
-
         }
         //获取所有语法树的根节点
         Set<? extends Element> rts = roundEnv.getRootElements();
@@ -404,17 +365,137 @@ public class InlineProcessor extends BaseProcessor {
     }
 
     private void transJCMethodInvocationBlock(JCTree.JCBlock jcBlock,Context context){
-        ListBuffer<JCTree.JCStatement> listBuffer = new ListBuffer<>();
-        for (JCTree.JCStatement jcStatement : jcBlock.stats){
-            java.util.List<JCTree.JCStatement> handled = handleInvocationStat(jcStatement,context);
-            if (handled==null) listBuffer.append(jcStatement);
-            else {
-                handled.forEach(listBuffer::append);
-            }
-        }
-        jcBlock.stats = listBuffer.toList();
+        handleInvocationStat(jcBlock,context);
     }
+
+    //ignored:
+    // JCTree.JCAssert, JCTree.JCBreak, JCTree.JCClassDecl, JCTree.JCContinue,
+    // JCTree.JCExpressionStatement, JCTree.JCReturn, JCTree.JCSkip, JCTree.JCThrow,
+    //handled:
+    // JCTree.JCBlock, JCTree.JCCase, JCTree.JCDoWhileLoop, JCTree.JCEnhancedForLoop,
+    // JCTree.JCForLoop, JCTree.JCIf, JCTree.JCLabeledStatement, JCTree.JCSwitch,
+    // JCTree.JCSynchronized, JCTree.JCTry, JCTree.JCVariableDecl, JCTree.JCWhileLoop
+
     private java.util.List<JCTree.JCStatement> handleInvocationStat(JCTree.JCStatement jcStatement,Context context){
+        if (jcStatement instanceof JCTree.JCBlock){
+            JCTree.JCBlock jcBlock = (JCTree.JCBlock) jcStatement;
+            ListBuffer<JCTree.JCStatement> listBuffer = new ListBuffer<>();
+            for (JCTree.JCStatement statement : jcBlock.stats){
+                java.util.List<JCTree.JCStatement> handled = handleInvocationStat(statement,context);
+                if (handled==null) listBuffer.append(statement);
+                else {
+                    handled.forEach(listBuffer::append);
+                }
+            }
+            jcBlock.stats = listBuffer.toList();
+            return null;
+        }
+        if (jcStatement instanceof JCTree.JCWhileLoop){
+            JCTree.JCWhileLoop jcWhileLoop = (JCTree.JCWhileLoop) jcStatement;
+            java.util.List<JCTree.JCStatement> update = handleInvocationStat(jcWhileLoop.body,context);
+            if (update!=null){
+                ListBuffer<JCTree.JCStatement> listBuffer = new ListBuffer<>();
+                update.forEach(listBuffer::append);
+                jcWhileLoop.body = treeMaker.Block(0,listBuffer.toList());
+            }
+            return null;
+        }
+        if (jcStatement instanceof JCTree.JCSynchronized){
+            JCTree.JCSynchronized jcSynchronized = (JCTree.JCSynchronized) jcStatement;
+            handleInvocationStat(jcSynchronized.body,context);
+            return null;
+        }
+        if (jcStatement instanceof JCTree.JCDoWhileLoop){
+            JCTree.JCDoWhileLoop jcDoWhileLoop = (JCTree.JCDoWhileLoop) jcStatement;
+            java.util.List<JCTree.JCStatement> update = handleInvocationStat(jcDoWhileLoop.body,context);
+            if (update!=null){
+                ListBuffer<JCTree.JCStatement> listBuffer = new ListBuffer<>();
+                update.forEach(listBuffer::append);
+                jcDoWhileLoop.body = treeMaker.Block(0,listBuffer.toList());
+            }
+            return null;
+        }
+        //handle the body only
+        if (jcStatement instanceof JCTree.JCForLoop){
+            JCTree.JCForLoop jcForLoop = (JCTree.JCForLoop) jcStatement;
+            java.util.List<JCTree.JCStatement> update = handleInvocationStat(jcForLoop.body,context);
+            if (update!=null){
+                ListBuffer<JCTree.JCStatement> listBuffer = new ListBuffer<>();
+                update.forEach(listBuffer::append);
+                jcForLoop.body = treeMaker.Block(0,listBuffer.toList());
+            }
+            return null;
+        }
+        //handle the body only
+        if (jcStatement instanceof JCTree.JCEnhancedForLoop){
+            JCTree.JCEnhancedForLoop jcEnhancedForLoop = (JCTree.JCEnhancedForLoop) jcStatement;
+            java.util.List<JCTree.JCStatement> update = handleInvocationStat(jcEnhancedForLoop.body,context);
+            if (update!=null){
+                ListBuffer<JCTree.JCStatement> listBuffer = new ListBuffer<>();
+                update.forEach(listBuffer::append);
+                jcEnhancedForLoop.body = treeMaker.Block(0,listBuffer.toList());
+            }
+            return null;
+        }
+        if (jcStatement instanceof JCTree.JCTry){
+            JCTree.JCTry jcTry = (JCTree.JCTry) jcStatement;
+            handleInvocationStat(jcTry.body,context);
+            for (JCTree.JCCatch jcCatch : jcTry.catchers){
+                handleInvocationStat(jcCatch.body,context);
+            }
+            handleInvocationStat(jcTry.finalizer,context);
+            return null;
+        }
+        if (jcStatement instanceof JCTree.JCLabeledStatement){
+            JCTree.JCLabeledStatement jcLabeledStatement = (JCTree.JCLabeledStatement) jcStatement;
+            java.util.List<JCTree.JCStatement> update = handleInvocationStat(jcLabeledStatement.body,context);
+            if (update!=null){
+                ListBuffer<JCTree.JCStatement> listBuffer = new ListBuffer<>();
+                update.forEach(listBuffer::append);
+                jcLabeledStatement.body = treeMaker.Block(0,listBuffer.toList());
+            }
+            return null;
+        }
+        if (jcStatement instanceof JCTree.JCIf){
+            JCTree.JCIf jcIf = (JCTree.JCIf) jcStatement;
+            {
+                JCTree.JCStatement then = jcIf.getThenStatement();
+                java.util.List<JCTree.JCStatement> update = handleInvocationStat(then,context);
+                if (update != null) {
+                    ListBuffer<JCTree.JCStatement> listBuffer = new ListBuffer<>();
+                    update.forEach(listBuffer::append);
+                    jcIf.thenpart = treeMaker.Block(0,listBuffer.toList());
+                }
+            }
+            {
+                JCTree.JCStatement els = jcIf.getElseStatement();
+                java.util.List<JCTree.JCStatement> update = handleInvocationStat(els,context);
+                if (update != null){
+                    ListBuffer<JCTree.JCStatement> listBuffer = new ListBuffer<>();
+                    update.forEach(listBuffer::append);
+                    jcIf.elsepart = treeMaker.Block(0,listBuffer.toList());
+                }
+            }
+            return null;
+        }
+        if (jcStatement instanceof JCTree.JCSwitch){
+            JCTree.JCSwitch jcSwitch = (JCTree.JCSwitch) jcStatement;
+            for (JCTree.JCCase jcCase : jcSwitch.getCases()){
+                handleInvocationStat(jcCase,context);
+            }
+            return null;
+        }
+        if (jcStatement instanceof JCTree.JCCase){
+            JCTree.JCCase jcCase = (JCTree.JCCase) jcStatement;
+            ListBuffer<JCTree.JCStatement> listBuffer = new ListBuffer<>();
+            for (JCTree.JCStatement statement : jcCase.getStatements()){
+                java.util.List<JCTree.JCStatement> handled = handleInvocationStat(statement,context);
+                if (handled==null) listBuffer.append(statement);
+                else handled.forEach(listBuffer::append);
+            }
+            jcCase.stats = listBuffer.toList();
+            return null;
+        }
         if (jcStatement instanceof JCTree.JCVariableDecl){
             JCTree.JCVariableDecl variableDecl = (JCTree.JCVariableDecl) jcStatement;
             //解析一下，拿到有上下文的变量定义
