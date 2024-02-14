@@ -9,7 +9,7 @@
     <version>1.0-SNAPSHOT</version>
 
     <parent>
-        <groupId>pers.xanadu</groupId>
+        <groupId>com.github.ixanadu13</groupId>
         <artifactId>InlineAnnotation-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
@@ -33,7 +33,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>pers.xanadu</groupId>
+            <groupId>com.github.ixanadu13</groupId>
             <artifactId>InlineAnnotation-Annotation</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>

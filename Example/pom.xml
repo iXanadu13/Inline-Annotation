@@ -4,30 +4,24 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>pers.xanadu</groupId>
+    <groupId>com.github.ixanadu13</groupId>
     <artifactId>Example</artifactId>
     <packaging>jar</packaging>
     <version>1.0-SNAPSHOT</version>
 
     <dependencies>
         <dependency>
-            <groupId>pers.xanadu</groupId>
+            <groupId>com.github.ixanadu13</groupId>
             <artifactId>InlineAnnotation-Annotation</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>pers.xanadu</groupId>
+            <groupId>com.github.ixanadu13</groupId>
             <artifactId>InlineAnnotation-Processor</artifactId>
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>net.nicoulaj.compile-command-annotations</groupId>-->
-<!--            <artifactId>compile-command-annotations</artifactId>-->
-<!--            <version>1.2.3</version>-->
-<!--            <scope>provided</scope>-->
-<!--        </dependency>-->
     </dependencies>
 
     <build>
@@ -39,11 +33,11 @@
                 <configuration>
                     <!-- Declare the processor in either <annotationProcessors> or META-INF/services/ -->
                     <annotationProcessors>
-                        <annotationProcessor>pers.xanadu.annotation.processor.InlineProcessor</annotationProcessor>
+                        <annotationProcessor>com.github.ixanadu13.annotation.processor.InlineProcessor</annotationProcessor>
                     </annotationProcessors>
                     <annotationProcessorPaths>
                         <path>
-                            <groupId>pers.xanadu</groupId>
+                            <groupId>com.github.ixanadu13</groupId>
                             <artifactId>InlineAnnotation-Processor</artifactId>
                             <version>1.0-SNAPSHOT</version>
                         </path>
