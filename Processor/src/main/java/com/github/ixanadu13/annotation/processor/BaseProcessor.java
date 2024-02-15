@@ -1,7 +1,6 @@
 package com.github.ixanadu13.annotation.processor;
 
 import com.sun.tools.javac.api.JavacTrees;
-import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
@@ -49,6 +48,5 @@ public abstract class BaseProcessor extends AbstractProcessor {
         Context context = ((JavacProcessingEnvironment) processingEnv).getContext();
         this.treeMaker = TreeMaker.instance(context);
         this.names = Names.instance(context);
-        //this.types = Types.instance(context);
     }
 }

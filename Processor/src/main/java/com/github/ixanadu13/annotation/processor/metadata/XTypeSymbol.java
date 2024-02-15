@@ -7,7 +7,7 @@ import com.sun.tools.javac.tree.JCTree;
 import java.util.Objects;
 
 public class XTypeSymbol {
-    Type type;
+    public Type type;
     TypeTag pri_ret;
     String ret;
     XTypeSymbol arr_element;
