@@ -148,7 +148,7 @@ You can use the command below to install it to your local maven repository:
 
 Run `mvn clean compile package` and see the output file at `Inline-Annotation\Example\target`.
 
-## How to use
+## How To Use
 > Add `@Inline` on method declaration to tell processor which method to be inlined
 
 > Add `@InlineAt` to tell processor where to insert method body.(on local_parameter only currently)
