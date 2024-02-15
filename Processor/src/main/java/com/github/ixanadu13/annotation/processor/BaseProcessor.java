@@ -48,12 +48,16 @@ public abstract class BaseProcessor extends AbstractProcessor {
     @Override
     public final synchronized void init(ProcessingEnvironment processingEnv) {
         super.init(processingEnv);
-        this.messager = processingEnv.getMessager();
-        this.trees = JavacTrees.instance(processingEnv);
-        this.processingEnv = processingEnv;
-        Context context = ((JavacProcessingEnvironment) processingEnv).getContext();
-        this.treeMaker = TreeMaker.instance(context);
-        this.treeCopier = new TreeCopier<>(treeMaker);
-        this.names = Names.instance(context);
+        try{
+            this.messager = processingEnv.getMessager();
+            this.trees = JavacTrees.instance(processingEnv);
+            this.processingEnv = processingEnv;
+            Context context = ((JavacProcessingEnvironment) processingEnv).getContext();
+            this.treeMaker = TreeMaker.instance(context);
+            this.treeCopier = new TreeCopier<>(treeMaker);
+            this.names = Names.instance(context);
+        }catch (Throwable throwable){
+            throwable.printStackTrace();
+        }
     }
 }
