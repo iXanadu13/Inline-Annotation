@@ -148,6 +148,44 @@ You can use the command below to install it to your local maven repository:
 
 Run `mvn clean compile package` and see the output file at `Inline-Annotation\Example\target`.
 
+## How to use
+> Add `@Inline` on method declaration to tell processor which method to be inlined
+
+> Add `@InlineAt` to tell processor where to insert method body.(on local_parameter only currently)
+
+### example 1
+```java
+@InlineAt String string = AnnotationTest.test("123");
+```
+Will be inlined (method declaration and invocation are in the exactly same class)
+
+### example 2
+```java
+@InlineAt String string = test("123"); 
+```
+Will not be inlined (owner class not found)
+
+### example 3
+```java
+@InlineAt("com.github.ixanadu13.annotation.test.AnnotationTest")
+String string = test("123"); 
+```
+Will be inlined (owner class is specified in @InlineAt annotation)
+
+### example 4
+```java
+@Inline
+private static void doSomething(){
+    StringBuilder sb = new StringBuilder();
+    if (new Random().nextBoolean()) sb.append("123");
+    else sb.append("456");
+}
+
+@InlineAt Object inline = AnnotationTest.doSomething();
+```
+Can be compile though your IDE will complain a syntax error, and will be inlined.
+
+(Probably there are better ways to do that. If you have ideas about it or you can solving it with IDE plugin, PR is welcome.)
 
 ## Limitation
 * Because of the limitation of AST, it's hard to locate method declarations from method calls precisely, maybe [JavaParser](https://github.com/javaparser/javaparser) can do it better.
