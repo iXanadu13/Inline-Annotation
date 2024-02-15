@@ -604,17 +604,34 @@ public class InlineProcessor extends BaseProcessor {
         final Iterator<JCTree.JCExpression> iterator = jcMethodInvocation.args.iterator();
         int size = jcMethodDecl.getParameters().length(),i=0;
         for (JCTree.JCVariableDecl jcVariableDecl : jcMethodDecl.params){
+            ++i;
+            System.out.println("参数变量定义："+jcVariableDecl);
+            if (!iterator.hasNext() && i!=size) throw new RuntimeException(
+                    String.format("Mismatched number of parameters between method decl and invocation. decl: %s, invocation: %s.",
+                            jcMethodDecl,
+                            jcMethodInvocation
+                    )
+            );
+            JCTree.JCExpression invoke_arg_copy = iterator.hasNext() ? treeCopier.copy(iterator.next()) : null;
+            // TODO: 一般来讲直接比较toString后的结果不会出问题，可能有更好的方法？
+            // TODO: 目前只能转换static方法，暂时还不需要考虑临时变量名覆盖类中字段名的情况
+            if (invoke_arg_copy != null &&
+                    !(invoke_arg_copy instanceof JCTree.JCLiteral) &&
+                    jcVariableDecl.name.toString().equals(invoke_arg_copy.toString())) continue;
             JCTree.JCVariableDecl copy = treeCopier.copy(jcVariableDecl);
             XTypeSymbol xTypeSymbol = new XTypeSymbol(jcVariableDecl.vartype);
             //如果方法定义中最后一个参数为Object...
-            if (++i==size && xTypeSymbol.type == XTypeSymbol.Type.ARRAY && jcVariableDecl.toString().split(" ")[0].endsWith("...")){
+            if (i==size && xTypeSymbol.type == XTypeSymbol.Type.ARRAY && jcVariableDecl.toString().split(" ")[0].endsWith("...")){
                 JCTree.JCArrayTypeTree jcArrayTypeTree = (JCTree.JCArrayTypeTree) jcVariableDecl.vartype;
                 ListBuffer<JCTree.JCExpression> listBuffer = new ListBuffer<>();
+                //先把已经取出来的加上
+                if (invoke_arg_copy != null) listBuffer.append(invoke_arg_copy);
+                //后面剩下的也全加上
                 while (iterator.hasNext())
                     listBuffer.append(treeCopier.copy(iterator.next()));
                 copy.init = treeMaker.NewArray(treeCopier.copy(jcArrayTypeTree.elemtype),List.nil(),listBuffer.toList());
             }
-            else copy.init = treeCopier.copy(iterator.next());
+            else copy.init = invoke_arg_copy;
             copy.mods = treeMaker.Modifiers(0);
             res.append(copy);
         }

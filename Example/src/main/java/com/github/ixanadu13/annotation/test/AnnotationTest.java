@@ -115,7 +115,6 @@ public class AnnotationTest {
         test(string);
         return 1;
     }
-
     public void innerClass_test(){
         @InlineAt("com.github.ixanadu13.annotation.test.AnnotationTest.InnerClass")
         Object inline = InnerClass.static_test();
@@ -131,6 +130,7 @@ public class AnnotationTest {
         @InlineAt int res = recursive(1);
         return null;
     }
+
     public static class InnerClass{
         @Inline
         public void test(){
