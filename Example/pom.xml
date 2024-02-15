@@ -4,10 +4,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.github.iXanadu13</groupId>
     <artifactId>InlineAnnotation-Example</artifactId>
     <packaging>jar</packaging>
     <version>1.0-dev</version>
+
+    <parent>
+        <groupId>com.github.iXanadu13</groupId>
+        <artifactId>InlineAnnotation-parent</artifactId>
+        <version>1.0-dev</version>
+    </parent>
 
     <dependencies>
         <dependency>
