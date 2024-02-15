@@ -74,8 +74,7 @@ public class InlineProcessor extends BaseProcessor {
         // TODO - 如果发现递归取消inline
         // TODO - 目前遇到递归会因为标签冲突而直接编译失败
         for(JCTree.JCMethodDecl jcMethod : methodDecls){
-            //TreeCopier<Void> copier = new TreeCopier<>(treeMaker);
-            //JCTree.JCBlock copy = copier.copy(code_block);
+            //JCTree.JCBlock copy = treeCopier.copy(code_block);
             //List<JCTree.JCStatement> statements = copy.getStatements();
             transJCMethodBlock(jcMethod);
         }
@@ -542,10 +541,9 @@ public class InlineProcessor extends BaseProcessor {
                             importClass(context.ancestor,decl_class.sym.fullname.toString());
                             // TODO: add import static p.k.g.MethodDeclClassName.*; ?
                         }
-                        TreeCopier<Void> copier = new TreeCopier<>(treeMaker);
                         ListBuffer<JCTree> imports = new ListBuffer<>();
                         compilationUnit_decl.getImports().forEach(jcImport -> {
-                            imports.append(copier.copy(jcImport));
+                            imports.append(treeCopier.copy(jcImport));
                         });
                         if (compilationUnit_invocation != null) {
                             compilationUnit_invocation.defs.forEach(imports::append);
@@ -553,29 +551,27 @@ public class InlineProcessor extends BaseProcessor {
                         }
                     }
                     if (decl.restype.type.getTag()==TypeTag.VOID){
-                        TreeCopier<Void> copier = new TreeCopier<>(treeMaker);
                         ListBuffer<JCTree.JCStatement> code = parseArguments(jcMethodInvocation,decl);
                         for (JCTree.JCStatement stat : decl.body.stats) {
                             //不能直接把表达式塞进去，必须拷贝
-                            code.append(copier.copy(stat));
+                            code.append(treeCopier.copy(stat));
                         }
                         JCTree.JCBlock block = treeMaker.Block(0,code.toList());
                         return Collections.singletonList(block);
                     }
                     else{
-                        TreeCopier<Void> copier = new TreeCopier<>(treeMaker);
                         ListBuffer<JCTree.JCStatement> code = parseArguments(jcMethodInvocation,decl);
                         for (JCTree.JCStatement stat : decl.body.stats) {
                             //不能直接把表达式塞进去，必须拷贝
                             //最后一句return改成向辅助变量赋值
                             if (stat instanceof JCTree.JCReturn) {
                                 JCTree.JCReturn jcReturn = (JCTree.JCReturn) stat;
-                                JCTree.JCExpression result = copier.copy(jcReturn.expr);
+                                JCTree.JCExpression result = treeCopier.copy(jcReturn.expr);
                                 code.append(
                                         treeMaker.Exec(treeMaker.Assign(treeMaker.Ident(variableDecl.name),result))
                                 );
                             }
-                            else code.append(copier.copy(stat));
+                            else code.append(treeCopier.copy(stat));
                         }
                         JCTree.JCBlock later = treeMaker.Block(0,code.toList());
                         variableDecl.init = null;
@@ -605,21 +601,20 @@ public class InlineProcessor extends BaseProcessor {
     }
     private ListBuffer<JCTree.JCStatement> parseArguments(JCTree.JCMethodInvocation jcMethodInvocation, JCTree.JCMethodDecl jcMethodDecl){
         ListBuffer<JCTree.JCStatement> res = new ListBuffer<>();
-        TreeCopier<Void> copier = new TreeCopier<>(treeMaker);
         final Iterator<JCTree.JCExpression> iterator = jcMethodInvocation.args.iterator();
         int size = jcMethodDecl.getParameters().length(),i=0;
         for (JCTree.JCVariableDecl jcVariableDecl : jcMethodDecl.params){
-            JCTree.JCVariableDecl copy = copier.copy(jcVariableDecl);
+            JCTree.JCVariableDecl copy = treeCopier.copy(jcVariableDecl);
             XTypeSymbol xTypeSymbol = new XTypeSymbol(jcVariableDecl.vartype);
             //如果方法定义中最后一个参数为Object...
             if (++i==size && xTypeSymbol.type == XTypeSymbol.Type.ARRAY && jcVariableDecl.toString().split(" ")[0].endsWith("...")){
                 JCTree.JCArrayTypeTree jcArrayTypeTree = (JCTree.JCArrayTypeTree) jcVariableDecl.vartype;
                 ListBuffer<JCTree.JCExpression> listBuffer = new ListBuffer<>();
                 while (iterator.hasNext())
-                    listBuffer.append(copier.copy(iterator.next()));
-                copy.init = treeMaker.NewArray(copier.copy(jcArrayTypeTree.elemtype),List.nil(),listBuffer.toList());
+                    listBuffer.append(treeCopier.copy(iterator.next()));
+                copy.init = treeMaker.NewArray(treeCopier.copy(jcArrayTypeTree.elemtype),List.nil(),listBuffer.toList());
             }
-            else copy.init = copier.copy(iterator.next());
+            else copy.init = treeCopier.copy(iterator.next());
             copy.mods = treeMaker.Modifiers(0);
             res.append(copy);
         }
@@ -635,9 +630,8 @@ public class InlineProcessor extends BaseProcessor {
         ListBuffer<JCTree.JCStatement> res = new ListBuffer<>();
         //增加一个temp临时变量
         if(!isVoid){
-            TreeCopier<Void> copier = new TreeCopier<>(treeMaker);
             res.append(treeMaker.VarDef(
-                    treeMaker.Modifiers(0),names.fromString("$$$temp$$$"),copier.copy(jcMethod.restype),null)
+                    treeMaker.Modifiers(0),names.fromString("$$$temp$$$"),treeCopier.copy(jcMethod.restype),null)
             );
         }
         //处理方法内的return

@@ -2,6 +2,7 @@ package com.github.ixanadu13.annotation.processor;
 
 import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
+import com.sun.tools.javac.tree.TreeCopier;
 import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Names;
@@ -29,6 +30,11 @@ public abstract class BaseProcessor extends AbstractProcessor {
     TreeMaker treeMaker;
 
     /**
+     * 用于深拷贝树节点
+     */
+    TreeCopier<Void> treeCopier;
+
+    /**
      * 用于创建标识符的对象
      */
     Names names;
@@ -47,6 +53,7 @@ public abstract class BaseProcessor extends AbstractProcessor {
         this.processingEnv = processingEnv;
         Context context = ((JavacProcessingEnvironment) processingEnv).getContext();
         this.treeMaker = TreeMaker.instance(context);
+        this.treeCopier = new TreeCopier<>(treeMaker);
         this.names = Names.instance(context);
     }
 }
