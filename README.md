@@ -192,3 +192,9 @@ Can be compile though your IDE will complain a syntax error, and will be inlined
 * If you want to inline a method with void return type `@InlineAt Object inline = AnnotationTest.doSomething();`, your IDE will complain a syntax error but it can be compile correctly. IDE plugin is needed to suppress it or maybe there is a better way to design `@InlineAt`.
 * `@Inline` nested declaration is not supported yet.
 * Only static method can be inlined currently.
+
+## License
+
+Inline-Annotation is available under the terms of the MIT License. You as the user are entitled to choose the terms under which adopt JavaParser.
+
+Some code is from [lombok](https://github.com/projectlombok/lombok) project, which is also open-source under MIT License.
