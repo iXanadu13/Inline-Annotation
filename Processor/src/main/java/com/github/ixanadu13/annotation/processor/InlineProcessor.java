@@ -65,13 +65,8 @@ public class InlineProcessor extends BaseProcessor {
                         //System.out.println("XMethod测试: "+symbol);
                         mp.put(symbol,jcMethod);
                         methodDecls.add(jcMethod);
-                        System.out.println("获取到方法："+jcMethod.name+", class: "+class_name);
+                        //System.out.println("获取到方法："+jcMethod.name+", class: "+class_name);
                     }
-//                    @Override
-//                    public void visitVarDef(JCTree.JCVariableDecl jcVariableDecl){
-//                        super.visitVarDef(jcVariableDecl);
-//                        System.out.println("测试: "+jcVariableDecl.name.toString());
-//                    }
                 });
             }
         }
@@ -216,7 +211,6 @@ public class InlineProcessor extends BaseProcessor {
         }
         // 注意由于是处理了 * 所以需要返回 false，否则其它 APT 无法执行
         return false;
-
     }
     private JCTree.JCMethodDecl trackMethodDecl(JCTree.JCMethodInvocation jcMethodInvocation, Context context,String owner){
         //解析后的方法调用
@@ -514,7 +508,7 @@ public class InlineProcessor extends BaseProcessor {
                 JCTree.JCMethodInvocation jcMethodInvocation = (JCTree.JCMethodInvocation) init;
                 //init不需要在这里解析，因为trackMethodDecl方法内部已经解析了
                 JCTree.JCMethodDecl decl = trackMethodDecl(jcMethodInvocation,context,at.value());
-                System.out.println("decl is null? "+decl);
+                //System.out.println("decl is null? "+decl);
                 if (decl!=null){
                     JCTree.JCCompilationUnit compilationUnit_invocation = toUnit(context.ancestor);
                     JCTree.JCCompilationUnit compilationUnit_decl = toUnit(decl.sym);
@@ -552,7 +546,6 @@ public class InlineProcessor extends BaseProcessor {
                             code.append(copier.copy(stat));
                         }
                         JCTree.JCBlock block = treeMaker.Block(0,code.toList());
-                        System.out.println("修改后的代码块："+block);
                         return Collections.singletonList(block);
                     }
                     else{
@@ -642,12 +635,10 @@ public class InlineProcessor extends BaseProcessor {
     // JCTree.JCExpressionStatement, JCTree.JCSkip, JCTree.JCThrow,
     // JCTree.JCVariableDecl,
     //handled:
-    // JCTree.JCBlock, JCTree.JCCase, JCTree.JCIf, JCTree.JCReturn,
-    // JCTree.JCSwitch,
-    //banned:
-    // JCTree.JCDoWhileLoop, JCTree.JCEnhancedForLoop,
-    // JCTree.JCForLoop, JCTree.JCLabeledStatement,
-    // JCTree.JCSynchronized, JCTree.JCTry, JCTree.JCWhileLoop
+    // JCTree.JCBlock, JCTree.JCCase, JCTree.JCDoWhileLoop, JCTree.JCEnhancedForLoop,
+    // JCTree.JCForLoop, JCTree.JCIf, JCTree.JCLabeledStatement, JCTree.JCReturn,
+    // JCTree.JCSwitch, JCTree.JCSynchronized, JCTree.JCTry, JCTree.JCWhileLoop,
+
     private JCTree.JCStatement handleJCStatement(JCTree.JCStatement statement){
         if(statement == null) return null;
         if(statement instanceof JCTree.JCBlock){
@@ -659,6 +650,45 @@ public class InlineProcessor extends BaseProcessor {
                 else listBuffer.append(update);
             }
             block.stats = listBuffer.toList();
+            return null;
+        }
+        if (statement instanceof JCTree.JCLabeledStatement){
+            JCTree.JCLabeledStatement jcLabeledStatement = (JCTree.JCLabeledStatement) statement;
+            JCTree.JCStatement update = handleJCStatement(jcLabeledStatement.body);
+            if (update != null) jcLabeledStatement.body = update;
+            return null;
+        }
+        if (statement instanceof JCTree.JCTry){
+            JCTree.JCTry jcTry = (JCTree.JCTry) statement;
+            handleJCStatement(jcTry.body);
+            for (JCTree.JCCatch jcCatch : jcTry.catchers){
+                handleJCStatement(jcCatch.body);
+            }
+            handleJCStatement(jcTry.finalizer);
+            return null;
+        }
+        if (statement instanceof JCTree.JCWhileLoop){
+            JCTree.JCWhileLoop jcWhileLoop = (JCTree.JCWhileLoop) statement;
+            JCTree.JCStatement update = handleJCStatement(jcWhileLoop.body);
+            if (update != null) jcWhileLoop.body = update;
+            return null;
+        }
+        if (statement instanceof JCTree.JCDoWhileLoop){
+            JCTree.JCDoWhileLoop jcDoWhileLoop = (JCTree.JCDoWhileLoop) statement;
+            JCTree.JCStatement update = handleJCStatement(jcDoWhileLoop.body);
+            if (update != null) jcDoWhileLoop.body = update;
+            return null;
+        }
+        if (statement instanceof JCTree.JCForLoop){
+            JCTree.JCForLoop jcForLoop = (JCTree.JCForLoop) statement;
+            JCTree.JCStatement update = handleJCStatement(jcForLoop.body);
+            if (update != null) jcForLoop.body = update;
+            return null;
+        }
+        if(statement instanceof JCTree.JCEnhancedForLoop){
+            JCTree.JCEnhancedForLoop jcEnhancedForLoop = (JCTree.JCEnhancedForLoop) statement;
+            JCTree.JCStatement update = handleJCStatement(jcEnhancedForLoop.body);
+            if (update != null) jcEnhancedForLoop.body = update;
             return null;
         }
         if(statement instanceof JCTree.JCIf){
@@ -703,11 +733,11 @@ public class InlineProcessor extends BaseProcessor {
             }
             return null;
         }
-//        if(statement instanceof JCTree.JCSynchronized){
-//            JCTree.JCSynchronized jcSynchronized = (JCTree.JCSynchronized) statement;
-//            handleJCStatement(jcSynchronized.body);
-//            return null;
-//        }
+        if(statement instanceof JCTree.JCSynchronized){
+            JCTree.JCSynchronized jcSynchronized = (JCTree.JCSynchronized) statement;
+            handleJCStatement(jcSynchronized.body);
+            return null;
+        }
 
         return null;
     }
