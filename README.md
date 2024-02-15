@@ -6,6 +6,36 @@ Utilize [JSR-269](https://jcp.org/en/jsr/detail?id=269) to process Abstract Synt
 
 For study only, please **consider carefully** before applying it to actual production environments.
 
+## Simple Example
+
+You write:
+```java
+@Inline
+public static String test(String str){
+    if(str.equals("testtesttest")) return "op";
+    if(str.equals("???")) return null;
+    return "123";
+}
+public static int outer_class_test(){
+    @InlineAt String string = AnnotationTest.test("123");
+    return 0;
+}
+```
+
+You get:
+```java
+public static String test(String str){
+    if(str.equals("testtesttest")) return "op";
+    if(str.equals("???")) return null;
+    return "123";
+}
+public static int outer_class_test(){
+    String $$$temp$$$ = "123".equals("testtesttest") ? "op" : "123".equals("???") ? null : "123";
+    String string = $$$temp$$$;
+    return 0;
+}
+```
+
 ## Setup
 ### step 1
 
@@ -16,12 +46,13 @@ Tested version: JDK1.8, JDK17 and JDK18.
 ### step 2
 
 Deploy `InlineAnnotation-Processor` to your local repository. You can choose **one of** the options:
+
 * Clone this project to local, replace `file:///D:/Environment/.m2/repository` in \<url> with your path and run `mvn clean compile package deploy`
-* Download `InlineAnnotation-Processor.jar` from release and then execute `mvn install:install-file -Dfile=InlineAnnotation-Processor-1.0-dev.jar -DgroupId=com.github.iXanadu13 -DartifactId=InlineAnnotation-Processor -Dversion=1.0-dev -Dpackaging=jar`
+* Download `InlineAnnotation-Processor.jar` from [release](https://github.com/iXanadu13/Inline-Annotation/releases) and then execute `mvn install:install-file -Dfile=InlineAnnotation-Processor-1.0-dev.jar -DgroupId=com.github.iXanadu13 -DartifactId=InlineAnnotation-Processor -Dversion=1.0-dev -Dpackaging=jar`
 
 ### step 3
 
-Download `InlineAnnotation-Annotation.jar` from release and add dependency for it.
+Download `InlineAnnotation-Annotation.jar` from [release](https://github.com/iXanadu13/Inline-Annotation/releases) and add dependency for it.
 
 ```xml
 <dependency>
@@ -32,7 +63,9 @@ Download `InlineAnnotation-Annotation.jar` from release and add dependency for i
 </dependency>
 ```
 
-Then add configuration to your maven-compiler-plugin.
+### step 4
+
+Add configuration to your maven-compiler-plugin.
 
 Here is an example for JDK17:
 ```xml
@@ -114,10 +147,6 @@ You can use the command below to install it to your local maven repository:
 ### step 3
 
 Run `mvn clean compile package` and see the output file at `Inline-Annotation\Example\target`.
-
-
-
-## Some Example
 
 
 ## Limitation
