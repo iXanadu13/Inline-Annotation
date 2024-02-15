@@ -43,45 +43,43 @@ public class InlineProcessor extends BaseProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         if(roundEnv.processingOver()) return false;
         //获取被inline注解标记的元素
-        Set<? extends Element> set = roundEnv.getElementsAnnotatedWith(Inline.class);
-        Map<XMethodSymbol, JCTree.JCMethodDecl> mp = new ConcurrentHashMap<>();
-        java.util.List<JCTree.JCMethodDecl> methodDecls = new ArrayList<>();
-        for(Element element : set){
-            if(element instanceof Symbol.MethodSymbol){
-                TypeElement class_element = (TypeElement) element.getEnclosingElement();
-                String class_name = class_element.getQualifiedName().toString();
-                //TreePath path = trees.getPath(element);
-                //System.out.println("方法所在路径为："+path);
-
-                //获取当前元素的JCTree对象
-                JCTree jcTree = trees.getTree(element);
-                //JCTree利用的是访问者模式，将数据与数据的处理进行解耦，TreeTranslator就是访问者，这里我们重写访问类时的逻辑
-                jcTree.accept(new TreeTranslator(){
-                    @Override
-                    public void visitMethodDef(JCTree.JCMethodDecl jcMethod){
-                        super.visitMethodDef(jcMethod);
-                        //System.out.println("测试"+jcMethod.sym);//(java.lang.String...)
-                        XMethodSymbol symbol = new XMethodSymbol(class_name,jcMethod);
-                        //System.out.println("XMethod测试: "+symbol);
-                        mp.put(symbol,jcMethod);
-                        methodDecls.add(jcMethod);
-                        //System.out.println("获取到方法："+jcMethod.name+", class: "+class_name);
-                    }
-                });
+        try{
+            Set<? extends Element> set = roundEnv.getElementsAnnotatedWith(Inline.class);
+            Map<XMethodSymbol, JCTree.JCMethodDecl> mp = new ConcurrentHashMap<>();
+            java.util.List<JCTree.JCMethodDecl> methodDecls = new ArrayList<>();
+            for(Element element : set){
+                if(element instanceof Symbol.MethodSymbol){
+                    TypeElement class_element = (TypeElement) element.getEnclosingElement();
+                    String class_name = class_element.getQualifiedName().toString();
+                    //TreePath path = trees.getPath(element);
+                    //System.out.println("方法所在路径为："+path);
+                    //获取当前元素的JCTree对象
+                    JCTree jcTree = trees.getTree(element);
+                    //JCTree利用的是访问者模式，将数据与数据的处理进行解耦，TreeTranslator就是访问者，这里我们重写访问类时的逻辑
+                    jcTree.accept(new TreeTranslator(){
+                        @Override
+                        public void visitMethodDef(JCTree.JCMethodDecl jcMethod){
+                            super.visitMethodDef(jcMethod);
+                            //System.out.println("测试"+jcMethod.sym);//(java.lang.String...)
+                            XMethodSymbol symbol = new XMethodSymbol(class_name,jcMethod);
+                            mp.put(symbol,jcMethod);
+                            methodDecls.add(jcMethod);
+                        }
+                    });
+                }
             }
-        }
-        //对所有注解为@Inline的jcMethod进行处理
-        // TODO - 如果发现递归取消inline
-        // TODO - 目前遇到递归会因为标签冲突而直接编译失败
-        for(JCTree.JCMethodDecl jcMethod : methodDecls){
-            //JCTree.JCBlock copy = treeCopier.copy(code_block);
-            //List<JCTree.JCStatement> statements = copy.getStatements();
-            transJCMethodBlock(jcMethod);
-        }
-        //获取所有语法树的根节点
-        Set<? extends Element> rts = roundEnv.getRootElements();
-        for(Element element : rts){
-            if(element.getKind() == ElementKind.CLASS){
+            //对所有注解为@Inline的jcMethod进行处理
+            // TODO - 如果发现递归取消inline
+            // TODO - 目前遇到递归会因为标签冲突而直接编译失败
+            for(JCTree.JCMethodDecl jcMethod : methodDecls){
+                //JCTree.JCBlock copy = treeCopier.copy(code_block);
+                //List<JCTree.JCStatement> statements = copy.getStatements();
+                transJCMethodBlock(jcMethod);
+            }
+            //获取所有语法树的根节点
+            Set<? extends Element> rts = roundEnv.getRootElements();
+            for(Element element : rts){
+                if(element.getKind() == ElementKind.CLASS){
 //                TypeElement class_element = (TypeElement) element;
 //                List<? extends Element> elements = class_element.getEnclosedElements();
 //                for(Element e : elements){
@@ -89,30 +87,29 @@ public class InlineProcessor extends BaseProcessor {
 //
 //                    }
 //                }
-                JCTree jcTree = trees.getTree(element);
-                TypeElement class_element = (TypeElement) element;
-                String enclosing_class_name = class_element.getQualifiedName().toString();
-                java.util.List<String> prefix = new ArrayList<>();
-                prefix.add(enclosing_class_name);
-                //方法所在类中的所有import
-                JCTree.JCCompilationUnit compilationUnit = toUnit(element);
-                if (compilationUnit==null) continue;
-                List<JCTree.JCImport> imports = compilationUnit.getImports();
-                imports.forEach(jcImport -> {
-                    //java.util.*
-                    //java.util.ArrayList
-                    if (!jcImport.staticImport) prefix.add(jcImport.qualid.toString());
-                });
-
-                jcTree.accept(new TreeTranslator(){
-                    @Override
-                    public void visitBlock(JCTree.JCBlock jcBlock){
-                        super.visitBlock(jcBlock);
-                        Context context = new Context(element,prefix,mp);
-                        System.out.println("开始转换代码块："+jcBlock);
-                        transJCMethodInvocationBlock(jcBlock,context);
-                        System.out.println("转换后的代码块："+jcBlock);
-                    }
+                    JCTree jcTree = trees.getTree(element);
+                    TypeElement class_element = (TypeElement) element;
+                    String enclosing_class_name = class_element.getQualifiedName().toString();
+                    java.util.List<String> prefix = new ArrayList<>();
+                    prefix.add(enclosing_class_name);
+                    //方法所在类中的所有import
+                    JCTree.JCCompilationUnit compilationUnit = toUnit(element);
+                    if (compilationUnit==null) continue;
+                    List<JCTree.JCImport> imports = compilationUnit.getImports();
+                    imports.forEach(jcImport -> {
+                        //java.util.*
+                        //java.util.ArrayList
+                        if (!jcImport.staticImport) prefix.add(jcImport.qualid.toString());
+                    });
+                    jcTree.accept(new TreeTranslator(){
+                        @Override
+                        public void visitBlock(JCTree.JCBlock jcBlock){
+                            super.visitBlock(jcBlock);
+                            Context context = new Context(element,prefix,mp);
+                            //System.out.println("开始转换代码块："+jcBlock);
+                            transJCMethodInvocationBlock(jcBlock,context);
+                            //System.out.println("转换后的代码块："+jcBlock);
+                        }
 //                    @Override
 //                    public void visitNewArray(JCTree.JCNewArray jcNewArray){
 //                        super.visitNewArray(jcNewArray);
@@ -215,8 +212,11 @@ public class InlineProcessor extends BaseProcessor {
 //                        System.out.println("isPoly?"+expression.isPoly()+" isStandalone?"+expression.isStandalone());
 //                    }
 
-                });
+                    });
+                }
             }
+        }catch (Throwable throwable){
+            throwable.printStackTrace();
         }
         // 注意由于是处理了 * 所以需要返回 false，否则其它 APT 无法执行
         return false;
@@ -525,29 +525,32 @@ public class InlineProcessor extends BaseProcessor {
                 if (decl!=null){
                     JCTree.JCCompilationUnit compilationUnit_invocation = toUnit(context.ancestor);
                     JCTree.JCCompilationUnit compilationUnit_decl = toUnit(decl.sym);
-                    //将方法申明所在类的import都加进来
-                    if(compilationUnit_decl!=null){
-                        JCTree.JCClassDecl decl_class = null;
-                        for (JCTree jcTree : compilationUnit_decl.defs){
-                            if (jcTree instanceof JCTree.JCClassDecl) {
-                                //找到方法申明所在的外部类
-                                decl_class = (JCTree.JCClassDecl) jcTree;
-                                break;
+                    //如果申明所在类不相同才复制，不判断这个在jdk1.8没问题，但是在高版本会炸
+                    if (compilationUnit_invocation!=compilationUnit_decl){
+                        //将方法申明所在类的import都加进来
+                        if(compilationUnit_decl!=null){
+                            JCTree.JCClassDecl decl_class = null;
+                            for (JCTree jcTree : compilationUnit_decl.defs){
+                                if (jcTree instanceof JCTree.JCClassDecl) {
+                                    //找到方法申明所在的外部类
+                                    decl_class = (JCTree.JCClassDecl) jcTree;
+                                    break;
+                                }
                             }
-                        }
-                        //总是成立
-                        if (decl_class != null) {
-                            //import p.k.g.MethodDeclClassName;
-                            importClass(context.ancestor,decl_class.sym.fullname.toString());
-                            // TODO: add import static p.k.g.MethodDeclClassName.*; ?
-                        }
-                        ListBuffer<JCTree> imports = new ListBuffer<>();
-                        compilationUnit_decl.getImports().forEach(jcImport -> {
-                            imports.append(treeCopier.copy(jcImport));
-                        });
-                        if (compilationUnit_invocation != null) {
-                            compilationUnit_invocation.defs.forEach(imports::append);
-                            compilationUnit_invocation.defs = imports.toList();
+                            //总是成立
+                            if (decl_class != null) {
+                                //import p.k.g.MethodDeclClassName;
+                                importClass(context.ancestor,decl_class.sym.fullname.toString());
+                                // TODO: add import static p.k.g.MethodDeclClassName.*; ?
+                            }
+                            ListBuffer<JCTree> imports = new ListBuffer<>();
+                            compilationUnit_decl.getImports().forEach(jcImport -> {
+                                imports.append(treeCopier.copy(jcImport));
+                            });
+                            if (compilationUnit_invocation != null) {
+                                compilationUnit_invocation.defs.forEach(imports::append);
+                                compilationUnit_invocation.defs = imports.toList();
+                            }
                         }
                     }
                     if (decl.restype.type.getTag()==TypeTag.VOID){
@@ -605,7 +608,7 @@ public class InlineProcessor extends BaseProcessor {
         int size = jcMethodDecl.getParameters().length(),i=0;
         for (JCTree.JCVariableDecl jcVariableDecl : jcMethodDecl.params){
             ++i;
-            System.out.println("参数变量定义："+jcVariableDecl);
+            //System.out.println("参数变量定义："+jcVariableDecl);
             if (!iterator.hasNext() && i!=size) throw new RuntimeException(
                     String.format("Mismatched number of parameters between method decl and invocation. decl: %s, invocation: %s.",
                             jcMethodDecl,
