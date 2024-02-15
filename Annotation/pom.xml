@@ -9,7 +9,7 @@
     <version>1.0-SNAPSHOT</version>
 
     <parent>
-        <groupId>com.github.ixanadu13</groupId>
+        <groupId>com.github.iXanadu13</groupId>
         <artifactId>InlineAnnotation-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
