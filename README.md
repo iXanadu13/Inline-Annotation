@@ -51,4 +51,4 @@ Run `mvn clean compile package` and see the output file at `Inline-Annotation\Ex
 * Because of the limitation of AST, it's hard to locate method declarations from method calls precisely, maybe [JavaParser](https://github.com/javaparser/javaparser) can do it better.
 * If you want to inline a method with void return type `@InlineAt Object inline = AnnotationTest.doSomething();`, your IDE will complain a syntax error but it can be compile correctly. IDE plugin is needed to suppress it or maybe there is a better way to design `@InlineAt`.
 * `@Inline` nested declaration is not supported yet.
-
+* Only static method can be inlined currently.
