@@ -78,6 +78,7 @@ Here is an example for JDK17:
         <source>8</source>
         <!-- Set to what you prefer -->
         <target>8</target>
+        <!-- if you are using JDK1.8, DO NOT add "fork" -->
         <fork>true</fork>
         <!-- compilerArgs is not required if you use JDK1.8 -->
         <compilerArgs>
