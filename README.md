@@ -16,8 +16,8 @@ Tested version: JDK1.8, JDK17 and JDK18.
 ### step 2
 
 Deploy `InlineAnnotation-Processor` to your local repository. You can choose **one of** the options:
+* Clone this project to local, replace `file:///D:/Environment/.m2/repository` in \<url> with your path and run `mvn clean compile package deploy`
 * Download `InlineAnnotation-Processor.jar` from release and then execute `mvn install:install-file -Dfile=InlineAnnotation-Processor-1.0-dev.jar -DgroupId=com.github.iXanadu13 -DartifactId=InlineAnnotation-Processor -Dversion=1.0-dev -Dpackaging=jar`
-* Clone this project to local and run `mvn clean compile package deploy`
 
 ### step 3
 
@@ -75,7 +75,7 @@ Here is an example for JDK17:
 ```
 * `<compilerArgs>` is not required if you use JDK1.8.
 * Don't forget to `enable annotation processing` if you use an IDE (Eclipse, IntelliJ IDEA etc.) to manage your project. For IntelliJ IDEA: `File > Settings > Build, Execution, Deployment > Compiler > Annotation Processors > Enable annotation processing`.
-* You need to deploy module `InlineAnnotation-Processor` to your local repository first. (step 2)
+* You need to deploy module `InlineAnnotation-Processor` to your local repository first. How to deploy? [(see step 2)](https://github.com/iXanadu13/Inline-Annotation?tab=readme-ov-file#step-2)
 
 ## How To Compile Sources
 ### step 1
