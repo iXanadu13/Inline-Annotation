@@ -11,17 +11,73 @@ import static com.github.ixanadu13.annotation.test.conflict.Lang.*;
 import static com.github.ixanadu13.annotation.test.subpkg.OtherClass.*;
 
 public class AnnotationTest {
-    private Object obj;
-    public static void test2(Object arg){
-        @InlineAt Object inline = AnnotationTest.doSomething();
-        @InlineAt Object inline2 = AnnotationTest.doSomethingWithArgs("123");
-        label1:{
-            //AnnotationTest.test("this class");
-        }
-        //参数隐式转换推断(String -> String[])
-        info("other class");//import static 推断
-        Lang.info("name");//package
+
+    public int all_statement_test(){
+        StringBuilder sb = new StringBuilder("1");
+        String string = sb.append("2").toString();
+        @InlineAt int value = AnnotationTest.to_be_inlined(string);
+        return value;
     }
+
+    @Inline
+    public static int to_be_inlined(String str){
+        if (str.equals("1")) return 1;
+        else if (str.equals("2")) return 2;
+        else{
+            if (str.equals("3")){
+                str = str.replace("3","replaced");
+                return 3;
+            }
+            switch (str){
+                case "4": return 4;
+                case "5": return 5;
+                default: {
+                    for (int i=6;i<=10;++i){
+                        String str_i = String.valueOf(i);
+                        if (str_i.equals(str)){
+                            try{
+                                return Integer.parseInt(str_i);
+                            }catch (Throwable throwable){
+                                return -1;
+                            }
+                        }
+                    }
+                    //JCBlock
+                    {
+                        //JCLabeledStatement
+                        label1: if ("11".equals(str)) return 11;
+                        label2:{
+                            if ("12".equals(str)) return 12;
+                            else break label2;
+                        }
+                        int i = 13;
+                        while (i++<15){
+                            if (String.valueOf(i).equals(str)) return i;
+                        }
+                    }
+                    List<Integer> list = new ArrayList<>();
+                    Collections.addAll(list,15,16,17,18);
+                    for (Integer integer : list){
+                        if (integer.toString().equals(str)) return integer;
+                    }
+                    int j = 19;
+                    do {
+                        if (str.equals(String.valueOf(j))) return j;
+                        ++j;
+                    }while (j<25);
+                    synchronized (AnnotationTest.class){
+                        try{
+                            return Integer.parseInt(str);
+                        }catch (Throwable ignored){}
+                        finally {
+                            return -1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     @Inline
     private static void doSomething(){
         StringBuilder sb = new StringBuilder();
@@ -29,106 +85,38 @@ public class AnnotationTest {
         else sb.append("456");
     }
     @Inline
-    public static void doSomethingWithArgs(String str){
-        StringBuilder sb2 = new StringBuilder(str);
-        sb2.append("123");
-    }
-    //@Inline
-    public static int gen(){
-        @InlineAt String string = AnnotationTest.test("123");
-        //require: import static com.github.ixanadu13.annotation.test.Lang.list;
-        //because Lang.list is not specified in function staticImportTest()
-        @InlineAt("com.github.ixanadu13.annotation.test.Lang")
-        Object test = Lang.staticImportTest();
-        //require: import static com.github.ixanadu13.annotation.test.subpkg.OtherClass.*;
-        //because OtherClass.mp is not specified in function method_other_okg_test()
-        @InlineAt
-        Object test2 = OtherClass.method_other_okg_test();
-        test(string);
-        //test(test("嵌套"));
-        Thread thread = new Thread(){
-            @Override
-            public void run(){
-
-            }
-        };
-        return 1;
-    }
-    @Inline
     public static String test(String str){
         if(str.equals("testtesttest")) return "op";
         if(str.equals("???")) return null;
         return "123";
     }
-    @Inline
-    public void test2(){
-        String test2 = "2";
-        String modifier_test = null;
-        this.virtual_method(10);
-        if(new Random().nextBoolean()) return;
-        test2 = "3";
-        int x=666;
-        switch_test(++x);
-        Void void_test = null;
-        String[][] str = null;
-        TestRet.InnerType innerType = new TestRet.InnerType();
-        Class clazz = null;
-        String test = "123";
-        Map<String,UUID> mp = new HashMap<>();
-    }
+    public static int outer_class_test(){
+        @InlineAt String string = AnnotationTest.test("123");
 
-
-    @Inline
-    public static int switch_test(int x){
-        String res = "123";
-        switch (x){
-            case 0: return 10;
-            case 1: {
-                res = "456";
-                if(new Random().nextBoolean()) return 666;
-                else break;
-            }
-            case 2: return 8;
-            default: return 0;
-        }
-        test(res);
-        return -1;
-    }
-    //@Inline
-    private String synchronized_test(){
         // specified className in @InlineAt
         // or add import com.github.ixanadu13.annotation.test.Lang;
         @InlineAt("com.github.ixanadu13.annotation.test.Lang")
-        Object test = Lang.info("123");
+        Object test1 = Lang.info("123");
+
+        //require: import static com.github.ixanadu13.annotation.test.Lang.list;
+        //because Lang.list is not specified in function staticImportTest()
+        @InlineAt("com.github.ixanadu13.annotation.test.Lang")
+        Object test2 = Lang.staticImportTest();
+
+        //require: import static com.github.ixanadu13.annotation.test.subpkg.OtherClass.*;
+        //because OtherClass.mp is not specified in function method_other_okg_test()
         //"Lang" can be omitted because it has been specified in @InlineAt
         @InlineAt("com.github.ixanadu13.annotation.test.Lang")
         Object obj = newInstance();
-        synchronized (AnnotationTest.class){
-            obj = new ArrayList<>();
-            if(new Random().nextBoolean()) return "123";
-        }
-        return "456";
+
+        @InlineAt
+        Object test3 = OtherClass.method_other_okg_test();
+
+        test(string);
+        return 1;
     }
-    @Inline
-    public String virtual_method(int i0){
-        {
-            String test = "abc";
-        }
-        String res = new String();
-        //label1:
-        for(int i=0;i<10;i++){
-            if(i==5) {
-                res = "yes";
-                break;
-            }
-            else {
-                res = "test";
-            }
-        }
-        return res;
-    }
-    //@Inline
-    public void test_multi_param(int i0,int i1,int i2){
+
+    public void innerClass_test(){
         @InlineAt("com.github.ixanadu13.annotation.test.AnnotationTest.InnerClass")
         Object inline = InnerClass.static_test();
     }
@@ -139,9 +127,8 @@ public class AnnotationTest {
         return 0;
     }
     @Inline
-    public TestRet testRet(){
+    public TestRet recursive_test(){
         @InlineAt int res = recursive(1);
-        test_multi_param(res,3,6);
         return null;
     }
     public static class InnerClass{
